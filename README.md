@@ -1,116 +1,90 @@
-# The Architect theme
+# 薪刻 · Salary Clock
 
-[![.github/workflows/ci.yaml](https://github.com/pages-themes/architect/actions/workflows/ci.yaml/badge.svg)](https://github.com/pages-themes/architect/actions/workflows/ci.yaml) [![Gem Version](https://badge.fury.io/rb/jekyll-theme-architect.svg)](https://badge.fury.io/rb/jekyll-theme-architect)
+一个按北京时间实时计算「赚钱速度」和「今日累计收入」的交互式网页。纯静态、无构建步骤、无第三方依赖，可直接部署到 GitHub Pages。
 
-*Architect is a Jekyll theme for GitHub Pages. You can [preview the theme to see what it looks like](http://pages-themes.github.io/architect), or even [use it today](#usage).*
+## 功能
 
-![Thumbnail of Architect](thumbnail.png)
+- **北京时间时钟**：无论访客身处哪个时区，都按 `Asia/Shanghai`（UTC+8）显示日期与时间，自动读取设备时钟，秒针实时走字。
+- **计算按钮**：修改月薪、工作天数或上下班时间后，点击「更新计算 / 应用新设定」按钮，才会应用新数据并保存到本机。
+- **赚钱速度**：根据月薪、每月平均工作天数、每天工作时间计算 `¥/min`。
+- **今日累计**：
+  - 上班前为 `0.00`；
+  - 工作时段内按分钟线性增长，每到整分结算一次；
+  - 下班后停在上限，不再增长。
+- **进度条与状态**：展示今日工作进度，自动切换「尚未开工 / 正在赚钱 / 今日收工」。
+- **输入校验**：点击计算时处理空值、负数、超过 31 天、下班早于上班等情况；校验失败会保留上一次有效结果。
+- **本机记忆**：点击计算成功后，设定保存在浏览器 `localStorage`，刷新后恢复，不会上传。未点击计算就刷新时，仍使用上一次已应用的设定。
+- **响应式**：适配桌面、平板和手机；支持减少动态效果的系统偏好。
+- **本地直接打开**：使用普通脚本加载，不依赖 ES Module 或本地服务器，双击 `index.html` 也能完整运行。
 
-## Usage
+## 计算方式
 
-To use the Architect theme:
-
-1. Add the following to your site's `_config.yml`:
-
-    ```yml
-    remote_theme: pages-themes/architect@v0.2.0
-    plugins:
-    - jekyll-remote-theme # add this line to the plugins list if you already have one
-    ```
-
-2. Optionally, if you'd like to preview your site on your computer, add the following to your site's `Gemfile`:
-
-    ```ruby
-    gem "github-pages", group: :jekyll_plugins
-    ```
-
-## Customizing
-
-### Configuration variables
-
-Architect will respect the following variables, if set in your site's `_config.yml`:
-
-```yml
-title: [The title of your site]
-description: [A short description of your site's purpose]
+```text
+每日分钟数 = 下班时间 − 上班时间
+每分钟收入 = 月薪 ÷（每月工作天数 × 每日分钟数）
+今日已赚   = 已工作分钟数 × 每分钟收入
+今日上限   = 月薪 ÷ 每月工作天数
 ```
 
-Additionally, you may choose to set the following optional variables:
+金额保留两位小数。工作时段按**当天同一日内**计算，暂不支持跨夜班。
 
-```yml
-show_downloads: ["true" or "false" (unquoted) to indicate whether to provide a download URL]
-google_analytics: [Your Google Analytics tracking ID]
+## 文件
+
+```text
+index.html          页面结构
+styles.css          样式与响应式布局
+app.js              页面交互、时钟与渲染
+salary.js           纯计算逻辑
+favicon.svg         站点图标
+tests/              单元测试与浏览器冒烟测试
+screenshots/        桌面 / 手机预览截图
 ```
 
-### Stylesheet
+部署时只需要上传 `index.html`、`styles.css`、`app.js`、`salary.js`、`favicon.svg`。所有资源都使用相对路径，放在用户主页根目录或项目子路径下都可以。
 
-If you'd like to add your own custom styles:
+## 本地预览
 
-1. Create a file called `/assets/css/style.scss` in your site
-2. Add the following content to the top of the file, exactly as shown:
-    ```scss
-    ---
-    ---
+现在可以直接双击 `index.html` 打开，不需要服务器。如果更习惯通过 HTTP 预览，也可以：
 
-    @import "{{ site.theme }}";
-    ```
-3. Add any custom CSS (or Sass, including imports) you'd like immediately after the `@import` line
+```bash
+python -m http.server 4173
+```
 
-*Note: If you'd like to change the theme's Sass variables, you must set new values before the `@import` line in your stylesheet.*
+然后打开 <http://127.0.0.1:4173/>。
 
-### Layouts
+## 测试
 
-If you'd like to change the theme's HTML layout:
+计算逻辑不依赖浏览器：
 
-1. For some changes such as a custom `favicon`, you can add custom files in your local `_includes` folder. The files [provided with the theme](https://github.com/pages-themes/architect/tree/master/_includes) provide a starting point and are included by the [original layout template](https://github.com/pages-themes/architect/blob/master/_layouts/default.html).
-2. For more extensive changes, [copy the original template](https://github.com/pages-themes/architect/blob/master/_layouts/default.html) from the theme's repository<br />(*Pro-tip: click "raw" to make copying easier*)
-3. Create a file called `/_layouts/default.html` in your site
-4. Paste the default layout content copied in the first step
-5. Customize the layout as you'd like
+```bash
+node tests/salary.test.mjs
+```
 
-### Customizing Google Analytics code
+浏览器冒烟测试需要先启动本地服务器，再以远程调试模式启动 Chrome：
 
-Google has released several iterations to their Google Analytics code over the years since this theme was first created. If you would like to take advantage of the latest code, paste it into `_includes/head-custom-google-analytics.html` in your Jekyll site.
+```bash
+chrome --headless=new --remote-debugging-port=9222 --user-data-dir=.chrome-test file:///E:/countSalary/index.html
+node tests/ui-smoke.mjs
+node tests/minute-tick.mjs
+```
 
-### Overriding GitHub-generated URLs
+`ui-smoke.mjs` 会同时验证 `file://` 直接打开和 HTTP 访问两种方式；`minute-tick.mjs` 会等待真实的下一分钟，验证金额在整分时按速率增长。
 
-Templates often rely on URLs supplied by GitHub such as links to your repository or links to download your project. If you'd like to override one or more default URLs:
+## 部署到 GitHub Pages（自行操作）
 
-1. Look at [the template source](https://github.com/pages-themes/architect/blob/master/_layouts/default.html) to determine the name of the variable. It will be in the form of `{{ site.github.zip_url }}`.
-2. Specify the URL that you'd like the template to use in your site's `_config.yml`. For example, if the variable was `site.github.url`, you'd add the following:
-    ```yml
-    github:
-      zip_url: http://example.com/download.zip
-      another_url: another value
-    ```
-3. When your site is built, Jekyll will use the URL you specified, rather than the default one provided by GitHub.
+**用户主页仓库** `https://github.com/<用户名>/<用户名>.github.io`：
 
-*Note: You must remove the `site.` prefix, and each variable name (after the `github.`) should be indent with two space below `github:`.*
+1. 把上述 5 个静态文件放到仓库根目录；
+2. 推送到 `main` 分支；
+3. 在仓库 **Settings → Pages** 中选择 `Deploy from a branch`，分支 `main`、目录 `/ (root)`；
+4. 等待 Pages 构建完成，访问 `https://<用户名>.github.io/`。
 
-For more information, see [the Jekyll variables documentation](https://jekyllrb.com/docs/variables/).
+**普通项目仓库**：同样上传文件并开启 Pages；资源路径是相对的，因此会正常部署在 `https://<用户名>.github.io/<仓库名>/` 下。
 
-## Roadmap
+本项目不使用 Jekyll 插件、不需要 Actions、不需要 Node 构建。
 
-See the [open issues](https://github.com/pages-themes/architect/issues) for a list of proposed features (and known issues).
+## 自定义
 
-## Project philosophy
-
-The Architect theme is intended to make it quick and easy for GitHub Pages users to create their first (or 100th) website. The theme should meet the vast majority of users' needs out of the box, erring on the side of simplicity rather than flexibility, and provide users the opportunity to opt-in to additional complexity if they have specific needs or wish to further customize their experience (such as adding custom CSS or modifying the default layout). It should also look great, but that goes without saying.
-
-## Contributing
-
-Interested in contributing to Architect? We'd love your help. Architect is an open source project, built one contribution at a time by users like you. See [the CONTRIBUTING file](docs/CONTRIBUTING.md) for instructions on how to contribute.
-
-### Previewing the theme locally
-
-If you'd like to preview the theme locally (for example, in the process of proposing a change):
-
-1. Clone down the theme's repository (`git clone https://github.com/pages-themes/architect`)
-2. `cd` into the theme's directory
-3. Run `script/bootstrap` to install the necessary dependencies
-4. Run `bundle exec jekyll serve` to start the preview server
-5. Visit [`localhost:4000`](http://localhost:4000) in your browser to preview the theme
-
-### Running tests
-
-The theme contains a minimal test suite, to ensure a site with the theme would build successfully. To run the tests, simply run `script/cibuild`. You'll need to run `script/bootstrap` once before the test script will work.
+- 默认示例数据在 `app.js` 顶部的 `DEFAULTS` 中（月薪 12000、每月 21.75 天、09:00–18:00）。
+- 主题色、字体与间距在 `styles.css` 顶部的 `:root` 变量中。
+- 北京时间由访客设备时钟换算，不请求网络校时；设备时间不准时显示也会不准。
