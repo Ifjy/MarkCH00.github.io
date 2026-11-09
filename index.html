@@ -1,15 +1,26 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dusk">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#0b0f0e" />
     <title>薪刻 · 把时间换成看得见的回报</title>
     <meta
       name="description"
       content="一个按北京时间实时计算赚钱速度与今日累计收入的极简时钟。所有计算仅在本机完成。"
     />
+    <script>
+      /* Restore the saved theme before first paint to avoid a flash. */
+      (function () {
+        try {
+          var t = localStorage.getItem("xinke-theme");
+          if (/^(dusk|paper|celadon|sun)$/.test(t)) {
+            document.documentElement.dataset.theme = t;
+          }
+        } catch (e) {}
+      })();
+    </script>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -36,11 +47,33 @@
           </span>
         </a>
 
-        <div class="live-pill" aria-label="实时北京时间，UTC 加 8 小时">
+        <div class="topbar-actions">
+          <div class="theme-picker" role="radiogroup" aria-label="界面主题">
+            <svg class="theme-picker-icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="5.6" stroke="currentColor" stroke-width="1.2" />
+              <path d="M8 2.4v11.2" stroke="currentColor" stroke-width="1.2" />
+              <path d="M11.8 4.2 4.2 11.8" stroke="currentColor" stroke-width="1.2" opacity="0.55" />
+            </svg>
+            <button class="theme-dot" type="button" role="radio" aria-checked="true" data-theme-value="dusk" title="夜幕" aria-label="主题：夜幕">
+              <span class="swatch swatch--dusk" aria-hidden="true"></span>
+            </button>
+            <button class="theme-dot" type="button" role="radio" aria-checked="false" data-theme-value="paper" title="晨纸" aria-label="主题：晨纸">
+              <span class="swatch swatch--paper" aria-hidden="true"></span>
+            </button>
+            <button class="theme-dot" type="button" role="radio" aria-checked="false" data-theme-value="celadon" title="青瓷" aria-label="主题：青瓷">
+              <span class="swatch swatch--celadon" aria-hidden="true"></span>
+            </button>
+            <button class="theme-dot" type="button" role="radio" aria-checked="false" data-theme-value="sun" title="蜜阳" aria-label="主题：蜜阳">
+              <span class="swatch swatch--sun" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <div class="live-pill" aria-label="实时北京时间，UTC 加 8 小时">
           <span class="live-dot" aria-hidden="true"></span>
           <span>北京时间</span>
           <span class="live-divider" aria-hidden="true"></span>
           <span class="live-utc">UTC+8</span>
+          </div>
         </div>
       </header>
 
@@ -271,6 +304,7 @@
       <p class="noscript">需要启用 JavaScript 才能读取北京时间并计算收入。</p>
     </noscript>
 
+    <script src="./theme.js"></script>
     <script src="./salary.js"></script>
     <script src="./app.js"></script>
   </body>
